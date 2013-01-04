@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Easy Chat</title>
+</head>
+<body>
+	<h1>Easy Chat</h1>
+
+	<!-- ログ -->
+	<ul id="chat-log">
+	</ul>
+
+	<!-- 入力欄 -->
+	<form style="position: absolute; bottom: 20px;">
+		<input type="text" id="input-name" readonly="readonly" placeholder="名前" />
+		<input type="text" id="input-text" placeholder="何か書いてください" />
+		<button type="button" id="btn-submit">送信</button>
+	</form>
+
+	<script src="/socket.io/socket.io.js"></script>
+	<script>
+		// socket.ioに接続
+		var socket = io.connect();
+		socket.on('post', function(time, name, text) {
+			// 他のユーザーの投稿を受けたときの処理
+			var text = time + ' : ' + name + ' &gt; ' + text;
+			addText(text);
+		});
+		socket.on('login', function(time, name){
+			// ユーザーが入室したとき
+			var text = time + ' : ' + name + 'さんが入室しました。';
+			addText(text);
+		});
+		socket.on('logout', function(time, name){
+			// ユーザーが退室したとき
+			var text = time + ' : ' + name + 'さんが退室しました。';
+			addText(text);
+		});
+
+		// 最初に名前を入力する
+		var name = '';
+		while (name == ''){
+			name = prompt('名前を入力してください');
+		}
+		document.getElementById('input-name').value = name;
+
+		// 入室
+		socket.emit('login', name);
+
+		// 送信ボタンを押したときの処理
+		document.getElementById('btn-submit').addEventListener('click', function() {
+			// 入力文字を取得
+			var input = document.getElementById('input-text');
+			var text = input.value;
+
+			// 入力が空でなければ送信して、テキストボックスを空にする
+			if (text != '') {
+				socket.emit('post', name, text);
+				input.value = '';
+			}
+		}, false);
+
+		function addText(text) {
+			var li = document.createElement('li');
+			li.innerHTML = text;
+			var ul = document.getElementById('chat-log');
+			ul.appendChild(li);
+		}
+	</script>
+</body>
+</html>
